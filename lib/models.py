@@ -1,30 +1,27 @@
-from sqlalchemy import create_engine, func
-from sqlalchemy import ForeignKey, Table, Column, Integer, String, DateTime, MetaData
-from sqlalchemy.orm import relationship, backref
+
+
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.sql import func
 
-convention = {
-    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
-}
-metadata = MetaData(naming_convention=convention)
+Base = declarative_base()
 
-Base = declarative_base(metadata=metadata)
-
-class Game(Base):
-    __tablename__ = 'games'
+class User(Base):
+    __tablename__ = 'users'
 
     id = Column(Integer(), primary_key=True)
-    title = Column(String())
-    genre = Column(String())
-    platform = Column(String())
-    price = Column(Integer())
+    name = Column(String())
+    created_at = Column(DateTime(), server_default=func.now())
+    updated_at = Column(DateTime(), onupdate=func.now())
 
-    reviews = relationship('Review', backref=backref('game'))
+    # Define relationships
+    reviews = relationship('Review', backref='user')
+    games = relationship('Game', secondary='game_users', back_populates='users')
 
     def __repr__(self):
-        return f'Game(id={self.id}, ' + \
-            f'title={self.title}, ' + \
-            f'platform={self.platform})'
+        return f'User(id={self.id}, name={self.name})'
+
 
 class Review(Base):
     __tablename__ = 'reviews'
@@ -32,10 +29,11 @@ class Review(Base):
     id = Column(Integer(), primary_key=True)
     score = Column(Integer())
     comment = Column(String())
-    
-    game_id = Column(Integer(), ForeignKey('games.id'))
+    created_at = Column(DateTime(), server_default=func.now())
+    updated_at = Column(DateTime(), onupdate=func.now())
+
+    # foreign key to link reviews to users
+    user_id = Column(Integer(), ForeignKey('users.id'))
 
     def __repr__(self):
-        return f'Review(id={self.id}, ' + \
-            f'score={self.score}, ' + \
-            f'game_id={self.game_id})'
+        return f'Review(id={self.id}, score={self.score})'
